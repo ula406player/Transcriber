@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Transcripció d'àudio · Local o en línia · Amb progrés detallat</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            background: #eef2f7;
+            padding: 1.2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0a2b3c;
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #2c9c6e;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        /* Targetes */
+        .card {
+            background: #f8fafc;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.8rem;
+            border-left: 5px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .card.active {
+            border-left-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .progress-bar {
+            background: #e2e8f0;
+            border-radius: 40px;
+            height: 30px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            background: #3b82f6;
+            width: 0%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: width 0.2s ease;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            background: #eef2ff;
+            padding: 0.6rem;
+            border-radius: 1rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #94a3b8;
+            border-radius: 1.5rem;
+            text-align: center;
+            padding: 1.5rem;
+            cursor: pointer;
+            margin: 1rem 0;
+            background: #f1f5f9;
+        }
+
+        .upload-area:hover {
+            background: #eef2ff;
+            border-color: #2563eb;
+        }
+
+        .file-label {
+            background: #0f172a;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 60px;
+            display: inline-block;
+            font-weight: 600;
+            margin: 0.5rem 0;
+            cursor: pointer;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-detail {
+            font-size: 0.8rem;
+            color: #334155;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 1.2rem 0;
+        }
+
+        button {
+            background: #1e293b;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.1s linear;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            box-shadow: 0 4px 8px rgba(59,130,246,0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .mode-switch {
+            background: #475569;
+        }
+
+        .result-card {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+        }
+
+        .transcript {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 1rem;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .status-msg {
+            background: #fef9c3;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .footer {
+            background: #f1f5f9;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: #334155;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@2.17.0/dist/transformers.min.js"
+            }
+        }
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎙️ Transcripció d'àudio <span class="badge">Local o online segur</span></h1>
+        <p>Detecta l’idioma automàticament · Privacitat total en mode local</p>
+    </div>
+    <div class="content">
+        <!-- TARGETA MODEL LOCAL (amb progrés detallat) -->
+        <div id="modelCard" class="card active">
+            <div class="card-title">🧠 1. Motor de transcripció local</div>
+            <div id="modelStatusArea">
+                <div class="progress-bar">
+                    <div id="modelProgressFill" class="progress-fill" style="width:0%">0%</div>
+                </div>
+                <div class="stats-row" id="statsPanel">
+                    <span>📡 Velocitat: -- Mbps</span>
+                    <span>⏱️ Temps restant: --</span>
+                    <span>📦 Descarregat: 0 / 0 MB</span>
+                </div>
+                <div id="modelMessage" class="status-msg">⏳ Preparant descàrrega del model (Whisper tiny, ~140 MB). La primera vegada pot trigar 1-2 minuts.</div>
+            </div>
+            <div style="margin-top: 10px;">
+                <button id="switchToOnlineBtn" class="mode-switch">☁️ Canviar a mode en línia (més lleuger)</button>
+            </div>
+        </div>
+
+        <!-- TARGETA ÀUDIO -->
+        <div class="card">
+            <div class="card-title">📁 2. Selecciona l’àudio</div>
+            <div class="upload-area" id="uploadArea">
+                <div>🎧 Fes clic o arrossega</div>
+                <label class="file-label" for="audioFile">🔍 Selecciona arxiu</label>
+                <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.webm">
+                <div id="fileInfo" class="file-detail">Cap arxiu seleccionat</div>
+                <audio id="audioPreview" controls style="width:100%; margin-top:8px; display:none;"></audio>
+            </div>
+        </div>
+
+        <!-- BOTONS -->
+        <div class="btn-group">
+            <button id="transcribeBtn" class="btn-primary" disabled>🎤 Transcriure (carregant model...)</button>
+            <button id="clearBtn">🗑️ Netejar text</button>
+        </div>
+
+        <!-- RESULTAT -->
+        <div class="result-card">
+            <div class="result-header">
+                <h3>📝 Transcripció (idioma original)</h3>
+                <div>
+                    <button id="copyBtn" style="background:#334155; padding:0.3rem 1rem;">📋 Copiar</button>
+                    <button id="downloadBtn" style="background:#334155; padding:0.3rem 1rem;">💾 TXT</button>
+                </div>
+            </div>
+            <div id="transcriptArea" class="transcript">
+                <div style="color:#94a3b8; text-align:center;">Esperant la transcripció...</div>
+            </div>
+        </div>
+        <div class="footer">
+            🔒 Mode local: tot es processa al teu ordinador. Mode en línia: usa Puter (gratuït, sense registre, sense emmagatzematge).<br>
+            Si el model local falla, el sistema canvia automàticament al mode en línia.
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { pipeline, env } from '@huggingface/transformers';
+
+    // --- CONFIGURACIÓ INICIAL ---
+    let transcriber = null;
+    let currentMode = 'local';   // 'local' o 'online'
+    let isProcessing = false;
+    let currentTranscript = '';
+    let modelLoadAttempted = false;
+    let modelDownloadStartTime = 0;
+    let lastProgress = 0;
+    let modelTotalBytes = 0;
+
+    // elements DOM
+    const modelProgressFill = document.getElementById('modelProgressFill');
+    const modelMessage = document.getElementById('modelMessage');
+    const statsPanel = document.getElementById('statsPanel');
+    const transcribeBtn = document.getElementById('transcribeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const transcriptArea = document.getElementById('transcriptArea');
+    const audioFileInput = document.getElementById('audioFile');
+    const fileInfo = document.getElementById('fileInfo');
+    const audioPreview = document.getElementById('audioPreview');
+    const uploadArea = document.getElementById('uploadArea');
+    const switchBtn = document.getElementById('switchToOnlineBtn');
+    const modelCard = document.getElementById('modelCard');
+
+    let selectedFile = null;
+
+    // Helper: formatejar Mbps
+    function formatSpeed(bytesPerSec) {
+        let mbps = (bytesPerSec * 8) / 1_000_000;
+        return mbps.toFixed(2) + ' Mbps';
+    }
+
+    function formatTime(seconds) {
+        if (!isFinite(seconds) || seconds <= 0) return '--';
+        if (seconds < 60) return `${Math.ceil(seconds)} seg`;
+        let mins = Math.floor(seconds / 60);
+        let secs = Math.floor(seconds % 60);
+        return `${mins} min ${secs} s`;
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 MB';
+        let mb = bytes / (1024 * 1024);
+        return mb.toFixed(1) + ' MB';
+    }
+
+    function updateModelProgress(percent, loadedBytes, totalBytes, speedBps, etaSec) {
+        let p = Math.min(100, Math.max(0, Math.floor(percent)));
+        modelProgressFill.style.width = `${p}%`;
+        modelProgressFill.textContent = `${p}%`;
+        if (totalBytes) {
+            let loadedMB = loadedBytes / (1024*1024);
+            let totalMB = totalBytes / (1024*1024);
+            let speedText = speedBps ? formatSpeed(speedBps) : '-- Mbps';
+            let etaText = etaSec ? formatTime(etaSec) : '--';
+            statsPanel.innerHTML = `<span>📡 Velocitat: ${speedText}</span>
+                                    <span>⏱️ Temps restant: ${etaText}</span>
+                                    <span>📦 Descarregat: ${loadedMB.toFixed(1)} / ${totalMB.toFixed(1)} MB</span>`;
+        }
+    }
+
+    // Mode fallback: canviar a mode online (Puter)
+    function switchToOnlineMode(manual = false) {
+        if (currentMode === 'online') return;
+        currentMode = 'online';
+        modelCard.style.borderLeftColor = '#f59e0b';
+        modelMessage.innerHTML = '☁️ Mode en línia activat (Puter). No cal descarregar model, però l’àudio s’envia a un servei extern segur.';
+        statsPanel.innerHTML = '<span>🌐 Mode online: utilitza API gratuïta sense registre</span>';
+        modelProgressFill.style.width = '100%';
+        modelProgressFill.textContent = 'Online';
+        if (transcriber) transcriber = null;
+        transcribeBtn.disabled = false;
+        transcribeBtn.textContent = '🎤 Transcriure (en línia)';
+        if (manual) {
+            modelMessage.innerHTML += '<br>✅ Has canviat manualment. Ara les transcripcions usaran el servei en línia.';
+        }
+    }
+
+    // Intent de càrrega del model local amb métriques completes i fallback
+    async function loadLocalModelWithFallback() {
+        if (transcriber && currentMode === 'local') return transcriber;
+        if (currentMode !== 'local') return null;
+        if (modelLoadAttempted) return null;
+        modelLoadAttempted = true;
+
+        updateModelProgress(0, 0, 0, 0, 0);
+        modelMessage.innerHTML = '🌐 Descarregant model des de Hugging Face... (Whisper tiny). Això pot trigar.';
+        let startTime = performance.now();
+        let lastLoaded = 0;
+        let lastTime = startTime;
+
+        try {
+            // Configurem cache i opcions
+            env.useBrowserCache = true;
+            env.allowLocalModels = false;
+            // Intenta carregar amb progress detallat
+            const asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+                quantized: true,
+                progress_callback: (progress) => {
+                    if (progress.status === 'downloading') {
+                        const now = performance.now();
+                        const elapsed = (now - startTime) / 1000;
+                        let loaded = progress.loaded || 0;
+                        let total = progress.total || 0;
+                        if (total) modelTotalBytes = total;
+                        let percent = (loaded / total) * 100;
+                        let speedBps = 0;
+                        let eta = 0;
+                        if (elapsed > 0.5 && loaded > lastLoaded) {
+                            let deltaBytes = loaded - lastLoaded;
+                            let deltaTime = (now - lastTime) / 1000;
+                            if (deltaTime > 0) speedBps = deltaBytes / deltaTime;
+                            if (speedBps > 0 && (total - loaded) > 0) eta = (total - loaded) / speedBps;
+                        }
+                        lastLoaded = loaded;
+                        lastTime = now;
+                        updateModelProgress(percent, loaded, total, speedBps, eta);
+                        modelMessage.innerHTML = `📥 Descarregant model: ${percent.toFixed(0)}% complet. Velocitat: ${speedBps ? formatSpeed(speedBps) : 'calculant...'}`;
+                    } else if (progress.status === 'ready') {
+                        updateModelProgress(100, modelTotalBytes, modelTotalBytes, 0, 0);
+                        modelMessage.innerHTML = '✅ Model local llest! Les transcripcions seran privades i ràpides.';
+                    }
+                }
+            });
+            transcriber = asr;
+            transcribeBtn.disabled = false;
+            transcribeBtn.textContent = '🎤 Transcriure (local)';
+            modelMessage.innerHTML = '✅ Model local carregat correctament. Privacitat total.';
+            return transcriber;
+        } catch (err) {
+            console.error("Error carregant model local:", err);
+            modelMessage.innerHTML = `⚠️ No s’ha pogut carregar el model local: ${err.message}. Provant servidor alternatiu...`;
+            // SEGON INTENT: canviar la font remota (mirror)
+            try {
+                env.remoteHost = 'https://huggingface.co/'; // mateix però podem provar CDN
+                // reiniciar pipeline
+                const asr2 = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+                    quantized: true,
+                    progress_callback: (progress) => {
+                        if (progress.status === 'downloading') {
+                            let percent = (progress.loaded / progress.total) * 100;
+                            modelMessage.innerHTML = `📡 Descarregant des de mirror: ${percent.toFixed(0)}%...`;
+                            modelProgressFill.style.width = `${percent}%`;
+                            modelProgressFill.textContent = `${Math.floor(percent)}%`;
+                        } else if (progress.status === 'ready') {
+                            modelMessage.innerHTML = '✅ Model llest via mirror.';
+                            modelProgressFill.style.width = `100%`;
+                        }
+                    }
+                });
+                transcriber = asr2;
+                transcribeBtn.disabled = false;
+                transcribeBtn.textContent = '🎤 Transcriure (local)';
+                return transcriber;
+            } catch (err2) {
+                console.error("Mirror també falla:", err2);
+                modelMessage.innerHTML = `❌ No s’ha pogut carregar el model local cap manera. Activant mode en línia automàticament.`;
+                switchToOnlineMode(false);
+                return null;
+            }
+        }
+    }
+
+    // TRANSCRIURE LOCAL
+    async function transcribeLocal(file) {
+        const whisper = await loadLocalModelWithFallback();
+        if (!whisper || currentMode !== 'local') {
+            throw new Error('Model local no disponible');
+        }
+        const audioUrl = URL.createObjectURL(file);
+        try {
+            const result = await whisper(audioUrl, {
+                language: null,
+                task: 'transcribe',
+                return_timestamps: false,
+                chunk_length_s: 30,
+            });
+            let text = result.text || result;
+            return text.trim();
+        } finally {
+            URL.revokeObjectURL(audioUrl);
+        }
+    }
+
+    // TRANSCRIRE ONLINE amb Puter
+    async function transcribeOnline(file) {
+        if (typeof puter === 'undefined' || !puter.ai || !puter.ai.speech2txt) {
+            throw new Error('Puter.js no està disponible. Comprova connexió a internet.');
+        }
+        // puter.ai.speech2txt retorna text directe
+        const result = await puter.ai.speech2txt(file, { model: 'whisper-1' });
+        if (typeof result === 'string') return result.trim();
+        if (result && result.text) return result.text.trim();
+        throw new Error('Resposta inesperada del servei');
+    }
+
+    // Gestor unificat
+    async function handleTranscription() {
+        if (isProcessing) {
+            modelMessage.innerHTML = 'Ja s’està processant un àudio. Espera si us plau.';
+            return;
+        }
+        if (!selectedFile) {
+            modelMessage.innerHTML = 'Selecciona un arxiu d’àudio primer.';
+            return;
+        }
+
+        isProcessing = true;
+        transcribeBtn.disabled = true;
+        transcribeBtn.textContent = '⏳ Processant...';
+        modelMessage.innerHTML = currentMode === 'local' ? '🔊 Transcripció local en curs... pot trigar segons' : '☁️ Enviant àudio al servei en línia...';
+
+        try {
+            let transcript;
+            if (currentMode === 'local') {
+                // Assegurar model local
+                const modelOk = await loadLocalModelWithFallback();
+                if (!modelOk && currentMode !== 'local') {
+                    // si fallback va canviar a online
+                    transcript = await transcribeOnline(selectedFile);
+                } else if (currentMode === 'local') {
+                    transcript = await transcribeLocal(selectedFile);
+                } else {
+                    transcript = await transcribeOnline(selectedFile);
+                }
+            } else {
+                transcript = await transcribeOnline(selectedFile);
+            }
+            if (!transcript) throw new Error('Transcripció buida');
+            currentTranscript = transcript;
+            transcriptArea.innerHTML = `<div style="white-space: pre-wrap;">${escapeHtml(currentTranscript)}</div>`;
+            modelMessage.innerHTML = '✅ Transcripció completada. Idiomes detectats automàticament.';
+        } catch (err) {
+            console.error(err);
+            let errorMsg = err.message || 'Error desconegut.';
+            if (errorMsg.includes('fetch') || errorMsg.includes('network')) {
+                errorMsg = 'Problema de xarxa. Comprova la teva connexió.';
+            }
+            transcriptArea.innerHTML = `<div style="color:#f8a5a5;">❌ Error: ${escapeHtml(errorMsg)}</div>`;
+            modelMessage.innerHTML = `❌ Error: ${errorMsg}`;
+            currentTranscript = '';
+        } finally {
+            isProcessing = false;
+            transcribeBtn.disabled = false;
+            transcribeBtn.textContent = currentMode === 'local' ? '🎤 Transcriure (local)' : '🎤 Transcriure (en línia)';
+        }
+    }
+
+    // Gestió del fitxer
+    audioFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            selectedFile = e.target.files[0];
+            fileInfo.innerHTML = `📄 ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+            const url = URL.createObjectURL(selectedFile);
+            audioPreview.src = url;
+            audioPreview.style.display = 'block';
+            audioPreview.load();
+        } else {
+            selectedFile = null;
+            fileInfo.innerHTML = 'Cap arxiu seleccionat';
+            audioPreview.style.display = 'none';
+        }
+    });
+
+    uploadArea.addEventListener('click', () => audioFileInput.click());
+
+    transcribeBtn.addEventListener('click', handleTranscription);
+    clearBtn.addEventListener('click', () => {
+        transcriptArea.innerHTML = '<div style="color:#94a3b8; text-align:center;">La transcripció apareixerà aquí.</div>';
+        currentTranscript = '';
+        modelMessage.innerHTML = currentMode === 'local' ? 'Model local llest.' : 'Mode online actiu. Selecciona àudio i transcriu.';
+    });
+
+    copyBtn.addEventListener('click', async () => {
+        if (!currentTranscript) {
+            modelMessage.innerHTML = 'No hi ha transcripció per copiar.';
+            return;
+        }
+        await navigator.clipboard.writeText(currentTranscript);
+        modelMessage.innerHTML = '📋 Copiat al portapapers!';
+        setTimeout(() => {
+            if (modelMessage.innerHTML === '📋 Copiat al portapapers!') 
+                modelMessage.innerHTML = currentMode === 'local' ? 'Model llest.' : 'Mode online actiu.';
+        }, 2000);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!currentTranscript) {
+            modelMessage.innerHTML = 'Res per descarregar.';
+            return;
+        }
+        const blob = new Blob([currentTranscript], {type: 'text/plain'});
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        let name = 'transcripcio.txt';
+        if (selectedFile) name = `transcripcio_${selectedFile.name.replace(/\.[^/.]+$/, '')}.txt`;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        modelMessage.innerHTML = '📁 Descarregat!';
+    });
+
+    switchBtn.addEventListener('click', () => {
+        switchToOnlineMode(true);
+        transcribeBtn.disabled = false;
+        transcribeBtn.textContent = '🎤 Transcriure (en línia)';
+        modelMessage.innerHTML = '🌐 Has canviat al mode en línia. Pots transcriure ara mateix.';
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Precarregar model local si s'escau
+    setTimeout(() => {
+        if (currentMode === 'local') {
+            loadLocalModelWithFallback().catch(e => console.warn("Precàrrega fallida, però l'usuari pot canviar a online"));
+        }
+    }, 500);
+</script>
+</body>
+              </html>
